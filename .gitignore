@@ -1,0 +1,7 @@
+env*
+model*
+dist*
+*egg-info
+tmp
+train.dense
+*.pyc
