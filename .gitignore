@@ -1,5 +1,4 @@
 env*
-model*
 dist*
 *egg-info
 tmp

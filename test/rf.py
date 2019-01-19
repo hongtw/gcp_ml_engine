@@ -10,15 +10,19 @@ from sklearn.externals import joblib
 # import joblib
 import pickle
 
+model_filename = 'model.pkl'
 model_filename = 'model.joblib'
-# model_filename = 'model.pkl'
 # BUCKET_NAME = 'ancient-snow-224803-ff'
-BUCKET_NAME = 'py3'
+# BUCKET_NAME = 'py3_sklearn_pkl'
+BUCKET_NAME = 'testinghaha'
 
+print(sys.argv)
+traindense = sys.argv[1]
+sk_version = sys.argv[2]
 
-
-data = np.loadtxt('train.dense')
-X, y = data[:, :-1], data[:, -1]
+MAX = None
+data = np.loadtxt(traindense)
+X, y = data[:MAX, :-1], data[:MAX, -1]
 
 print("Total data: {0}".format(X.shape[0]))
 params = {
@@ -44,15 +48,20 @@ model_dir = "model"
 if not(os.path.exists(model_dir) and os.path.isdir(model_dir)):
     os.makedirs(model_dir)
 
-joblib.dump(clf, model_filename, compress=1)
-# with open(model_filename, "wb") as f:
-    # pickle.dump(clf, f)
+if model_filename == 'model.pkl':
+    with open(model_filename, 'wb') as f:
+        pickle.dump(clf, f)
+elif model_filename == 'model.joblib':
+    joblib.dump(clf, model_filename, compress=1)
+    # joblib.dump(clf, model_filename)
+else:
+    print('check file name')
 
 # Upload the saved model file to Cloud Storage
 # gcs_model_path = os.path.join('gs://', BUCKET_NAME,
     # datetime.datetime.now().strftime('ff_%Y%m%d_%H%M%S'), model_filename)
 
-gcs_model_path = os.path.join('gs://', BUCKET_NAME, model_filename)
+gcs_model_path = os.path.join('gs://', BUCKET_NAME, sk_version, model_filename)
 
 subprocess.check_call(['gsutil', 'cp', model_filename, gcs_model_path],
     stderr=sys.stdout)

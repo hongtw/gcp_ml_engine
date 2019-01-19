@@ -3,10 +3,11 @@ import xgboost as xgb
 import sys, os, time
 import numpy as np
 # from sklearn.externals import joblib
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import accuracy_score
 import joblib
 from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import ParameterGrid
 
 CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -53,7 +54,7 @@ def scikitAPI(trainFile):
     # print("Total Acc: :", clf_test.score(X, Y), np.shape(X))
 
     
-    
+    xgtrain = xgb.DMatrix(X, Y)
     clf = XGBClassifier(**params).fit(X, Y)
     model_path = 'xgb/model.joblib'
     # joblib.dump(clf, model_path, compress=1)
@@ -76,5 +77,29 @@ def load_model(model_path, y_test):
     clf._le = le
     return clf
 
+def gridSearch(train_file):
+    X, Y, X_train, X_test, Y_train, Y_test = inputData(train_file)
+    params = dict(
+        learning_rate = [0.01, 0.001],
+        n_estimators = list(range(100, 600, 100)),
+        subsample = [0.8, 0.9, 1],
+        colsample_bytree = np.arange(0.3, 0.9, 0.1),
+        gamma = [0, 1, 5]
+    )
+
+    best_score = 0
+    best_params = None
+    for param in ParameterGrid(params):
+        clf = XGBClassifier(n_job=-1, **param)
+        scores = cross_val_score(clf, X, Y, cv=3)
+        print('Params: {0}, Scores: {1}'.format(param, scores))
+        avg_scores = np.mean(scores)
+        if avg_scores > best_score:
+            best_score = avg_scores
+            best_params = param
+            print("Best Score:{0}, Best Parmas:{1}".format(best_score, best_params))
+
 if __name__ == "__main__":
-    scikitAPI(sys.argv[1])
+    train_file = sys.argv[1]
+    # scikitAPI(train_file)
+    gridSearch(train_file)
