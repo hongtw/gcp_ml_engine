@@ -7,7 +7,7 @@ import tensorflow as tf
 import numpy as np
 import trainer.model as model
 from trainer.util import load_data
-
+import time
 
 def train_and_evaluate(args):
     # data_loc = args.train_files
@@ -31,6 +31,11 @@ def train_and_evaluate(args):
     clf.fit(x, y)
     clf.save_model(args.model_dir) 
     print("Save model to {0}".format(args.model_dir))
+    clf.save_model('model.bst') 
+    print("Save model to {0}".format('model.bst'))
+    subprocess.check_call(
+        ['gsutil', 'cp', 'model.bst', 'gs://ancient-snow-224803-ff/job/{}/model.bst'.format(time.strftime("%Y%m%d"))],
+        stderr=sys.stdout)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
