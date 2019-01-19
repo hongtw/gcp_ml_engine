@@ -10,8 +10,10 @@ from trainer.util import load_data
 
 
 def train_and_evaluate(args):
-    data_loc = args.train_files
+    # data_loc = args.train_files
+    data_loc = 'gs://ancient-snow-224803-ff/data/train.dense'
     data_filename = "train.dense"
+    print('data_loc', data_loc, 'data_filename', data_filename)
     # gsutil outputs everything to stderr so we need to divert it to stdout.
     subprocess.check_call(['gsutil', 'cp', data_loc, data_filename], stderr=sys.stdout)
     
