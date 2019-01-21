@@ -3,19 +3,23 @@ from googleapiclient import errors
 import logging
 import os
 import time
-from setting import GCP_PROJECT_ID, SERVICE_ACCOUNT, BUCKET_NAME, TRAIN_FILE, JOB_DIR
+from setting import GCP_PROJECT_ID, SERVICE_ACCOUNT, BUCKET_NAME, TRAIN_FILE, JOB_DIR, TRAIN_FILENAME, REGION
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"]= SERVICE_ACCOUNT
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = SERVICE_ACCOUNT
 
-training_inputs = {'scaleTier': 'CUSTOM',
-    'masterType': 'complex_model_m',
-    'packageUris': ['gs://{0}/trainer/trainer-0.1.tar.gz'.format(BUCKET_NAME)],
+training_inputs = {
+    'scaleTier': 'BASIC',  # CUSTOM for different Machine
+    # 'masterType': 'complex_model_m',    # This parmater is with 'scaleTier': 'CUSTOM'
+    'packageUris': ['gs://{0}/trainer/trainer-0.2.tar.gz'.format(BUCKET_NAME)],
     'pythonModule': 'trainer.task',
-    'args': ['--train-files', TRAIN_FILE, '--arg2', 'value2'],
-    'region': 'us-central1',
+    'args': [
+        '--train-filename', TRAIN_FILENAME, 
+        '--bucket-name', BUCKET_NAME, 
+        ],
+    'region': REGION,
     'jobDir': JOB_DIR,
-    'runtimeVersion': '1.12',
-    'pythonVersion': '3.5'}
+    'runtimeVersion': '1.9',
+    'pythonVersion': '2.7'}
 
 
 job_spec = {

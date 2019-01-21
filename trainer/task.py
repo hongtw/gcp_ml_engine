@@ -1,50 +1,75 @@
 import argparse
+import joblib
+# from sklearn.externals import joblib
 import json
 import os
 import sys
 import subprocess
-import tensorflow as tf
 import numpy as np
 import trainer.model as model
 from trainer.util import load_data
 import time
+import sklearn
+import datetime
+from google.cloud import storage
+import scipy
+
+
+def show_lib_version():
+    print('Numpy Version:{0}'.format(np.__version__))
+    print('Scikit-Learn Version:{0}'.format(sklearn.__version__))
+    print('Joblib Version:{0}'.format(joblib.__version__))
+    print('Scipy Version:{0}'.format(scipy.__version__))
+
+def upload_to_gs(model_name, bucket_name):
+    # gs_model_loc = os.path.join('gs://', bucket_name, 'job', time.strftime("%Y%m%d"), model_name)
+    # subprocess.check_call(
+    #     ['gsutil', 'cp', model_name, gs_model_loc],
+    #     stderr=sys.stdout)
+    # print("Upload {} to {}".format(model_name, gs_model_loc))
+
+    bucket = storage.Client().bucket(bucket_name)
+    blob = bucket.blob('job/{}/{}'.format(
+        datetime.datetime.now().strftime('%Y%m%d_%H%M%S'),
+        model_name))
+    blob.upload_from_filename(model_name)
 
 def train_and_evaluate(args):
-    # data_loc = args.train_files
-    data_loc = 'gs://ancient-snow-224803-ff/data/train.dense'
-    data_filename = "train.dense"
-    print('data_loc', data_loc, 'data_filename', data_filename)
+    show_lib_version()
+    train_filename = args['train_filename']
+    bucket_name = args['bucket_name']
+    data_loc = os.path.join('gs://', bucket_name, 'data', train_filename)
+    # data_loc = 'gs://ancient-snow-224803-ff/data/train.dense'
+    print('data_loc:{}, train_filename:{}'.format(data_loc, train_filename))
+
     # gsutil outputs everything to stderr so we need to divert it to stdout.
-    subprocess.check_call(['gsutil', 'cp', data_loc, data_filename], stderr=sys.stdout)
-    
+    subprocess.check_call(['gsutil', 'cp', data_loc, train_filename], stderr=sys.stdout)
     config = {
         "params":dict(
             n_estimators=50,
-            learning_rate=0.1
         )
-    }
-    
+    }    
+
+    x, y = load_data(train_filename)
     clf = model.build_estimator(config)
-
-    x, y = load_data(data_filename)
-
     clf.fit(x, y)
-    clf.save_model(args.model_dir) 
-    print("Save model to {0}".format(args.model_dir))
-    clf.save_model('model.bst') 
-    print("Save model to {0}".format('model.bst'))
-    subprocess.check_call(
-        ['gsutil', 'cp', 'model.bst', 'gs://ancient-snow-224803-ff/job/{}/model.bst'.format(time.strftime("%Y%m%d"))],
-        stderr=sys.stdout)
+    model_name = 'model.joblib'
+    joblib.dump(clf, model_name, compress=1)
+    print("Save model to {0}".format(model_name))
+    upload_to_gs(model_name, bucket_name)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # Input Arguments
     parser.add_argument(
-        '--train-files',
+        '--train-filename',
         help='GCS file or local paths to training data',
-        nargs='+',
-        default='gs://ancient-snow-224803-ff/data/train.dense')
+        # nargs='+',
+        default='train.dense')
+    parser.add_argument(
+        '--bucket-name',
+        help='Buckekt name on Cloud Storage'
+    )
     parser.add_argument(
         '--eval-files',
         help='GCS file or local paths to evaluation data',
@@ -60,7 +85,8 @@ if __name__ == '__main__':
         default='INFO')
 
     args, _ = parser.parse_known_args()
-
+    args = vars(args)
+    print(args)
 
     # Run the training job
     train_and_evaluate(args)

@@ -3,12 +3,17 @@ import os
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 SERVICE_ACCOUNT = os.path.join(PROJECT_DIR, 'service_account.json')
 
-GCP_PROJECT_ID = "ancient-snow-224803"
-BUCKET_NAME = '{}-ff'.format(GCP_PROJECT_ID)
+GCP_PROJECT_ID = "hip-runner-229302"
+# BUCKET_NAME = '{}-ff'.format(GCP_PROJECT_ID)
+BUCKET_NAME = 'ff-predictor'
 TRAIN_FILE = 'gs://{0}/data/train.dense'.format(BUCKET_NAME)
 JOB_DIR = 'gs://{0}/job'.format(BUCKET_NAME)
+TRAIN_FILENAME = 'train.dense'
+# REGION = 'us-central1'
+REGION = 'asia-east1'
 
-# Training Machine Type
+
+## Training Machine Type
 '''
 * standard	
 A basic machine configuration suitable for training simple models with small to moderate datasets.
