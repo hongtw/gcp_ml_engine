@@ -4,3 +4,7 @@ dist*
 tmp
 train.dense
 *.pyc
+new
+model.joblib
+model.bst
+model.pkl

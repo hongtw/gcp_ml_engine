@@ -10,7 +10,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = SERVICE_ACCOUNT
 training_inputs = {
     'scaleTier': 'BASIC',  # CUSTOM for different Machine
     # 'masterType': 'complex_model_m',    # This parmater is with 'scaleTier': 'CUSTOM'
-    'packageUris': ['gs://{0}/trainer/trainer-0.2.tar.gz'.format(BUCKET_NAME)],
+    'packageUris': ['gs://{0}/trainer/trainer-0.5.tar.gz'.format(BUCKET_NAME)],
     'pythonModule': 'trainer.task',
     'args': [
         '--train-filename', TRAIN_FILENAME, 

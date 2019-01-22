@@ -11,28 +11,61 @@ from trainer.util import load_data
 import time
 import sklearn
 import datetime
-from google.cloud import storage
+# from google.cloud import storage
 import scipy
+import pickle
 
+def gs_copy(src, dst):
+    subprocess.check_call(
+        ['gsutil', 'cp', src, dst],
+        stderr=sys.stdout)
+    print("Copy from {} to {}".format(src, dst))
 
 def show_lib_version():
     print('Numpy Version:{0}'.format(np.__version__))
     print('Scikit-Learn Version:{0}'.format(sklearn.__version__))
     print('Joblib Version:{0}'.format(joblib.__version__))
     print('Scipy Version:{0}'.format(scipy.__version__))
+    print('pickle Version:{0}'.format(pickle.__version__))
+
+def get_version(module):
+    return (module.__name__.capitalize(), module.__version__)
+
+def gen_meta(now):
+    versions = dict([
+        get_version(module) for module in [np, sklearn, joblib, scipy]
+    ])
+    meta = {
+        'Versions':versions,
+        'Build_Time': now
+    }
+    with open('meta.json', 'w') as f:
+        json.dump(meta, f)
 
 def upload_to_gs(model_name, bucket_name):
-    # gs_model_loc = os.path.join('gs://', bucket_name, 'job', time.strftime("%Y%m%d"), model_name)
-    # subprocess.check_call(
-    #     ['gsutil', 'cp', model_name, gs_model_loc],
-    #     stderr=sys.stdout)
-    # print("Upload {} to {}".format(model_name, gs_model_loc))
+    now = datetime.datetime.now().strftime('%Y%m%d_%H%M')
+    gs_model_loc = os.path.join('gs://', bucket_name, 'job', now, model_name)
+    gs_meta_loc = os.path.join('gs://', bucket_name, 'job', now, 'meta.json')
 
-    bucket = storage.Client().bucket(bucket_name)
-    blob = bucket.blob('job/{}/{}'.format(
-        datetime.datetime.now().strftime('%Y%m%d_%H%M%S'),
-        model_name))
-    blob.upload_from_filename(model_name)
+    subprocess.check_call(
+        ['gsutil', 'cp', model_name, gs_model_loc],
+        stderr=sys.stdout)
+    print("Upload {} to {}".format(model_name, gs_model_loc))
+    
+    gen_meta(now)
+    subprocess.check_call(
+        ['gsutil', 'cp', 'meta.json', gs_meta_loc],
+        stderr=sys.stdout)
+    print("Upload {} to {}".format('meta.json', gs_meta_loc))
+
+    # bucket = storage.Client().bucket(bucket_name)
+    # blob = bucket.blob('job/{}/{}'.format(
+    #     now,
+    #     model_name))
+    # blob.upload_from_filename(model_name)
+
+    # blob = bucket.blob('job/{}/meta.json'.format(now))
+    # blob.upload_from_filename('meta.json')
 
 def train_and_evaluate(args):
     show_lib_version()
@@ -53,10 +86,22 @@ def train_and_evaluate(args):
     x, y = load_data(train_filename)
     clf = model.build_estimator(config)
     clf.fit(x, y)
+
     model_name = 'model.joblib'
-    joblib.dump(clf, model_name, compress=1)
+    joblib.dump(clf, model_name, compress=3)
+
     print("Save model to {0}".format(model_name))
     upload_to_gs(model_name, bucket_name)
+    
+
+    try:
+        print(subprocess.check_output(
+            ['pip freeze'],
+            stdout=sys.stdout,
+            stderr=sys.stderr
+        ))
+    except:
+        pass
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
