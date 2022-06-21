@@ -5,7 +5,7 @@ REQUIRED_PACKAGES = [
     'scikit-learn==0.19.1', 
     "requests >= 2.18.0",
     'joblib==0.11',
-    'numpy==1.14.5', 
+    'numpy==1.22.0', 
     'scipy==1.1.0'
     ]
 
