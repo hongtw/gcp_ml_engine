@@ -4,7 +4,7 @@ from setuptools import setup
 REQUIRED_PACKAGES = [
     'scikit-learn==0.19.1', 
     "requests >= 2.18.0",
-    'joblib==0.11',
+    'joblib==1.2.0',
     'numpy==1.14.5', 
     'scipy==1.1.0'
     ]
